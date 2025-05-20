@@ -4,6 +4,7 @@ import com.example.messageserver.model.Message;
 import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class MessageService {
@@ -15,5 +16,11 @@ public class MessageService {
     
     public List<Message> getAllMessages() {
         return new ArrayList<>(messages);
+    }
+    
+    public List<Message> getMessagesByRecipient(String recipient) {
+        return messages.stream()
+                .filter(message -> message.getRecipient().equals(recipient))
+                .collect(Collectors.toList());
     }
 } 

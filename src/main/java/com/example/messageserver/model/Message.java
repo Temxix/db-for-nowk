@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 public class Message {
     private String content;
     private String sender;
+    private String recipient;
     private LocalDateTime timestamp;
     
     public Message() {

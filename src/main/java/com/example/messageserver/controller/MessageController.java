@@ -26,12 +26,18 @@ public class MessageController {
         if (message.getSender() == null || message.getSender().trim().isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
+        if (message.getRecipient() == null || message.getRecipient().trim().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
         messageService.addMessage(message);
         return ResponseEntity.ok(message);
     }
     
     @GetMapping
-    public ResponseEntity<List<Message>> getAllMessages() {
+    public ResponseEntity<List<Message>> getMessages(@RequestParam(required = false) String recipient) {
+        if (recipient != null && !recipient.trim().isEmpty()) {
+            return ResponseEntity.ok(messageService.getMessagesByRecipient(recipient));
+        }
         return ResponseEntity.ok(messageService.getAllMessages());
     }
     

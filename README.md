@@ -84,7 +84,3 @@ src/main/java/com/example/messageserver/
 - Spring Web
 - Lombok
 - Maven
-
-## Лицензия
-
-Этот проект распространяется под лицензией MIT. 
