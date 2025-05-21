@@ -1,145 +1,118 @@
 # Message Server
 
-Простой сервер сообщений, реализованный на Spring Boot.
+Сервер для обмена зашифрованными сообщениями с использованием MongoDB и Spring Boot.
 
 ## Требования
 
-- Java 17 или выше
-- Maven 3.6 или выше
+- Java 24
+- Maven
+- MongoDB Atlas (облачная база данных)
 
-## Установка
+## Конфигурация
 
-1. Клонируйте репозиторий:
-```bash
-git clone [URL репозитория]
+1. Создайте аккаунт на [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+2. Создайте новый кластер
+3. Получите строку подключения
+4. Настройте `application.properties`:
+```properties
+spring.data.mongodb.uri=ваша_строка_подключения
+spring.data.mongodb.database=NOWK_DB
 ```
 
-2. Перейдите в директорию проекта:
-```bash
-cd message-server
-```
+## Запуск
 
-3. Соберите проект с помощью Maven:
-```bash
-mvn clean install
-```
-
-## Запуск приложения
-
-Запустите приложение с помощью команды:
 ```bash
 mvn spring-boot:run
 ```
 
-Сервер будет запущен на порту 8080.
+Сервер запустится на порту 8080.
 
 ## API Endpoints
 
-### Сообщения
-
-#### Отправка сообщения
-- **URL**: `/api/messages`
-- **Метод**: `POST`
-- **Тело запроса**:
-```json
-{
-    "content": "Текст сообщения",
-    "sender": "Имя отправителя",
-    "recipient": "Имя получателя"
-}
-```
-
-#### Получение сообщений
-- **URL**: `/api/messages`
-- **Метод**: `GET`
-- **Параметры**:
-  - `recipient` (опционально) - фильтр по получателю
-- **Ответ**: Массив сообщений в формате JSON
-
 ### Пользователи
 
 #### Регистрация пользователя
-- **URL**: `/api/users/register`
-- **Метод**: `POST`
-- **Тело запроса**:
-```json
+```
+POST /api/users/register
+Content-Type: application/json
+
 {
-    "name": "Имя пользователя",
-    "publicKey": "Публичный ключ"
+    "name": "имя_пользователя",
+    "publicKey": "публичный_ключ"
 }
 ```
 
-#### Получение списка имен пользователей
-- **URL**: `/api/users/names`
-- **Метод**: `GET`
-- **Ответ**: Массив имен пользователей
+#### Получение списка пользователей
+```
+GET /api/users/names
+```
 
-#### Приветственное сообщение
-- **URL**: `/api/users/welcome`
-- **Метод**: `GET`
-- **Параметры**:
-  - `name` - имя пользователя
-- **Ответ**: Приветственное сообщение
+#### Получение приветственного сообщения
+```
+GET /api/users/welcome?name=имя_пользователя
+```
+Возвращает зашифрованное приветственное сообщение, используя публичный ключ пользователя.
+
+### Сообщения
+
+#### Отправка сообщения
+```
+POST /api/messages
+Content-Type: application/json
+
+{
+    "content": "текст_сообщения",
+    "sender": "отправитель",
+    "recipient": "получатель"
+}
+```
+
+#### Получение сообщений пользователя
+```
+GET /api/messages?username=имя_пользователя&recipient=имя_получателя
+```
+Возвращает список сообщений между двумя пользователями:
+- Сообщения, где `username` является отправителем, а `recipient` - получателем
+- Сообщения, где `recipient` является отправителем, а `username` - получателем
+
+Для каждого сообщения указывается флаг `isMine`, показывающий, является ли пользователь `username` отправителем.
+
+Параметры:
+- `username` (обязательный) - имя пользователя, чьи сообщения нужно получить
+- `recipient` (обязательный) - имя второго пользователя для получения переписки
 
 ## Примеры использования
 
-### Сообщения
-
-#### Отправка сообщения
-```bash
-curl -X POST http://localhost:8080/api/messages \
--H "Content-Type: application/json" \
--d '{"content": "Привет, мир!", "sender": "Иван", "recipient": "Петр"}'
-```
-
-#### Получение всех сообщений
-```bash
-curl http://localhost:8080/api/messages
-```
-
-#### Получение сообщений для конкретного получателя
-```bash
-curl http://localhost:8080/api/messages?recipient=Петр
-```
-
-### Пользователи
-
-#### Регистрация пользователя
+### Регистрация пользователя
 ```bash
 curl -X POST http://localhost:8080/api/users/register \
--H "Content-Type: application/json" \
--d '{"name": "Иван", "publicKey": "abc123"}'
+  -H "Content-Type: application/json" \
+  -d '{"name":"test","publicKey":"your_public_key"}'
 ```
 
-#### Получение списка имен
+### Получение сообщений
 ```bash
-curl http://localhost:8080/api/users/names
+curl http://localhost:8080/api/messages?username=test&recipient=user2
 ```
 
-#### Получение приветствия
+### Отправка сообщения
 ```bash
-curl http://localhost:8080/api/users/welcome?name=Иван
+curl -X POST http://localhost:8080/api/messages \
+  -H "Content-Type: application/json" \
+  -d '{"content":"Привет!","sender":"user1","recipient":"user2"}'
 ```
 
-## Структура проекта
+## Безопасность
 
-```
-src/main/java/com/example/messageserver/
-├── MessageServerApplication.java    # Точка входа приложения
-├── controller/                      # REST контроллеры
-│   ├── MessageController.java
-│   └── UserController.java
-├── model/                          # Модели данных
-│   ├── Message.java
-│   └── User.java
-└── service/                        # Бизнес-логика
-    ├── MessageService.java
-    └── UserService.java
-```
+- Все сообщения шифруются с использованием RSA-шифрования
+- Каждый пользователь имеет свой публичный ключ
+- Сообщения хранятся в зашифрованном виде в MongoDB
+- Строка подключения к базе данных хранится в переменных окружения
 
 ## Технологии
 
-- Spring Boot 3.2.3
-- Spring Web
+- Spring Boot 3.4.5
+- MongoDB
+- Spring Data MongoDB
 - Lombok
-- Maven
+- Java 24

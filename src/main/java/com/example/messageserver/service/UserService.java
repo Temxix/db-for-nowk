@@ -1,33 +1,39 @@
 package com.example.messageserver.service;
 
 import com.example.messageserver.model.User;
+import com.example.messageserver.repository.UserRepository;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserService {
-    private final List<User> users = new ArrayList<>();
+    private final UserRepository userRepository;
+    private final EncryptionService encryptionService;
+    
+    public UserService(UserRepository userRepository, EncryptionService encryptionService) {
+        this.userRepository = userRepository;
+        this.encryptionService = encryptionService;
+    }
     
     public void registerUser(User user) {
-        users.add(user);
+        userRepository.save(user);
     }
     
     public List<String> getAllUserNames() {
-        return users.stream()
+        return userRepository.findAll().stream()
                 .map(User::getName)
                 .toList();
     }
     
     public String getWelcomeMessage(String name) {
-        boolean isRegistered = users.stream()
-                .anyMatch(user -> user.getName().equals(name));
+        Optional<User> user = Optional.ofNullable(userRepository.findByName(name));
         
-        if (!isRegistered) {
+        if (user.isEmpty()) {
             return null;
         }
         
-        return "Добро пожаловать!";
+        String welcomeMessage = "Добро пожаловать!";
+        return encryptionService.encryptMessage(welcomeMessage, user.get().getPublicKey());
     }
 } 

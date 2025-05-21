@@ -2,6 +2,7 @@ package com.example.messageserver.controller;
 
 import com.example.messageserver.model.Message;
 import com.example.messageserver.service.MessageService;
+import com.example.messageserver.dto.MessageResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
@@ -20,6 +21,7 @@ public class MessageController {
     
     @PostMapping
     public ResponseEntity<Message> sendMessage(@RequestBody Message message) {
+        System.out.println("Received message: " + message);
         if (message.getContent() == null || message.getContent().trim().isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
@@ -34,11 +36,16 @@ public class MessageController {
     }
     
     @GetMapping
-    public ResponseEntity<List<Message>> getMessages(@RequestParam(required = false) String recipient) {
-        if (recipient != null && !recipient.trim().isEmpty()) {
-            return ResponseEntity.ok(messageService.getMessagesByRecipient(recipient));
+    public ResponseEntity<List<MessageResponse>> getMessages(
+            @RequestParam String username,
+            @RequestParam String recipient) {
+        if (username == null || username.trim().isEmpty()) {
+            return ResponseEntity.badRequest().build();
         }
-        return ResponseEntity.ok(messageService.getAllMessages());
+        if (recipient == null || recipient.trim().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(messageService.getMessages(username, recipient));
     }
     
     @ExceptionHandler(Exception.class)
