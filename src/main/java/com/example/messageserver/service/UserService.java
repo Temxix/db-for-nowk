@@ -36,4 +36,13 @@ public class UserService {
         String welcomeMessage = "Добро пожаловать!";
         return encryptionService.encryptMessage(welcomeMessage, user.get().getPublicKey());
     }
+    
+    public void deleteAllUsers() {
+        userRepository.deleteAll();
+    }
+    
+    public String getUserPublicKey(String username) {
+        User user = userRepository.findByName(username);
+        return user != null ? user.getPublicKey() : null;
+    }
 } 

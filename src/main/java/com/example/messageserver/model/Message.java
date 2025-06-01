@@ -10,12 +10,21 @@ import java.time.LocalDateTime;
 public class Message {
     @Id
     private String id;
-    private String content;
-    private String sender;
+    private String username;
     private String recipient;
+    private boolean isSentByMe;
     private LocalDateTime timestamp;
+    private String content;
     
     public Message() {
         this.timestamp = LocalDateTime.now();
+    }
+
+    public void setIsSentByMe(boolean isSentByMe) {
+        this.isSentByMe = isSentByMe;
+    }
+
+    public boolean getIsSentByMe() {
+        return isSentByMe;
     }
 } 

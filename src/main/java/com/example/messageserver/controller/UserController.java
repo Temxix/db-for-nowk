@@ -2,6 +2,7 @@ package com.example.messageserver.controller;
 
 import com.example.messageserver.model.User;
 import com.example.messageserver.service.UserService;
+import com.example.messageserver.dto.UserDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,13 +19,18 @@ public class UserController {
     }
     
     @PostMapping("/register")
-    public ResponseEntity<User> registerUser(@RequestBody User user) {
-        if (user.getName() == null || user.getName().trim().isEmpty()) {
+    public ResponseEntity<User> registerUser(@RequestBody UserDTO userDTO) {
+        if (userDTO.getName() == null || userDTO.getName().trim().isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
-        if (user.getPublicKey() == null || user.getPublicKey().trim().isEmpty()) {
+        if (userDTO.getPublicKey() == null || userDTO.getPublicKey().trim().isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
+        
+        User user = new User();
+        user.setName(userDTO.getName());
+        user.setPublicKey(userDTO.getPublicKey());
+        
         userService.registerUser(user);
         return ResponseEntity.ok(user);
     }
@@ -41,5 +47,11 @@ public class UserController {
             return ResponseEntity.status(404).body("Пользователь не найден");
         }
         return ResponseEntity.ok(message);
+    }
+    
+    @DeleteMapping("/all")
+    public ResponseEntity<Void> deleteAllUsers() {
+        userService.deleteAllUsers();
+        return ResponseEntity.ok().build();
     }
 } 

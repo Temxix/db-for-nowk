@@ -2,12 +2,16 @@ package com.example.messageserver.controller;
 
 import com.example.messageserver.model.Message;
 import com.example.messageserver.service.MessageService;
-import com.example.messageserver.dto.MessageResponse;
+import com.example.messageserver.dto.PostMessageResponseDTO;
+import com.example.messageserver.dto.PostMessageRequestDTO;
+import com.example.messageserver.dto.GetMessagesResponseDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/messages")
@@ -20,23 +24,23 @@ public class MessageController {
     }
     
     @PostMapping
-    public ResponseEntity<Message> sendMessage(@RequestBody Message message) {
+    public ResponseEntity<PostMessageResponseDTO> sendMessage(@RequestBody PostMessageRequestDTO message) {
         System.out.println("Received message: " + message);
         if (message.getContent() == null || message.getContent().trim().isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
-        if (message.getSender() == null || message.getSender().trim().isEmpty()) {
+        if (message.getUsername() == null || message.getUsername().trim().isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
         if (message.getRecipient() == null || message.getRecipient().trim().isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
-        messageService.addMessage(message);
-        return ResponseEntity.ok(message);
+        String messageId = messageService.addMessage(message);
+        return ResponseEntity.ok(new PostMessageResponseDTO("Message added", messageId));
     }
     
     @GetMapping
-    public ResponseEntity<List<MessageResponse>> getMessages(
+    public ResponseEntity<List<GetMessagesResponseDTO>> getMessages(
             @RequestParam String username,
             @RequestParam String recipient) {
         if (username == null || username.trim().isEmpty()) {
