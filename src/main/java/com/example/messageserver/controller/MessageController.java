@@ -1,6 +1,5 @@
 package com.example.messageserver.controller;
 
-import com.example.messageserver.model.Message;
 import com.example.messageserver.service.MessageService;
 import com.example.messageserver.dto.PostMessageResponseDTO;
 import com.example.messageserver.dto.PostMessageRequestDTO;
@@ -10,8 +9,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 
 import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/messages")

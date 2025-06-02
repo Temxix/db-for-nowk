@@ -1,7 +1,6 @@
 package com.example.messageserver.dto;
 
 import lombok.Data;
-import java.time.LocalDateTime;
 
 @Data
 public class PostMessageRequestDTO {
