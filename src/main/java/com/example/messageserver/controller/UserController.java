@@ -2,7 +2,8 @@ package com.example.messageserver.controller;
 
 import com.example.messageserver.model.User;
 import com.example.messageserver.service.UserService;
-import com.example.messageserver.dto.UserDTO;
+import com.example.messageserver.dto.GetUsersResponseDTO;
+import com.example.messageserver.dto.RegisterUserRequestDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,7 +20,7 @@ public class UserController {
     }
     
     @PostMapping("/register")
-    public ResponseEntity<User> registerUser(@RequestBody UserDTO userDTO) {
+    public ResponseEntity<User> registerUser(@RequestBody RegisterUserRequestDTO userDTO) {
         if (userDTO.getName() == null || userDTO.getName().trim().isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
@@ -40,8 +41,11 @@ public class UserController {
     }
     
     @GetMapping("/names")
-    public ResponseEntity<List<String>> getAllUserNames() {
-        return ResponseEntity.ok(userService.getAllUserNames());
+    public ResponseEntity<GetUsersResponseDTO> getAllUserNames() {
+        List<String> names = userService.getAllUserNames();
+        GetUsersResponseDTO response = new GetUsersResponseDTO();
+        response.setUsernames(names);
+        return ResponseEntity.ok(response);
     }
     
     @GetMapping("/welcome")
