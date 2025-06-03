@@ -17,13 +17,14 @@ public class UserService {
     }
     
     public void registerUser(User user) {
+        if (userRepository.findByName(user.getName()) != null) {
+            throw new RuntimeException("Пользователь с таким именем уже существует");
+        }
         userRepository.save(user);
     }
     
     public List<String> getAllUserNames() {
-        return userRepository.findAll().stream()
-                .map(User::getName)
-                .toList();
+        return userRepository.findAllNames();
     }
     
     public String getWelcomeMessage(String name) {
@@ -44,5 +45,15 @@ public class UserService {
     public String getUserPublicKey(String username) {
         User user = userRepository.findByName(username);
         return user != null ? user.getPublicKey() : null;
+    }
+
+    public List<String> getRecipients(String username) {
+        User user = userRepository.findRecipientNamesByName(username);
+        if (user == null) {
+            throw new RuntimeException("Пользователь не найден");
+        }
+        return user.getRecipients().stream()
+                .map(User.Recipient::getRecipient)
+                .toList();
     }
 } 

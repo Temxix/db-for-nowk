@@ -22,8 +22,7 @@ public class MessageController {
     
     @PostMapping
     public ResponseEntity<PostMessageResponseDTO> sendMessage(@RequestBody PostMessageRequestDTO message) {
-        System.out.println("Received message: " + message);
-        if (message.getContent() == null || message.getContent().trim().isEmpty()) {
+        if (message.getText() == null || message.getText().trim().isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
         if (message.getUsername() == null || message.getUsername().trim().isEmpty()) {
@@ -33,7 +32,7 @@ public class MessageController {
             return ResponseEntity.badRequest().build();
         }
         String messageId = messageService.addMessage(message);
-        return ResponseEntity.ok(new PostMessageResponseDTO("Message added", messageId));
+        return ResponseEntity.ok(new PostMessageResponseDTO("Сообщение добавлено", messageId));
     }
     
     @GetMapping
@@ -53,6 +52,6 @@ public class MessageController {
     public ResponseEntity<String> handleException(Exception e) {
         return ResponseEntity
             .status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body("An error occurred: " + e.getMessage());
+            .body("Произошла ошибка: " + e.getMessage());
     }
 }

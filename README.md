@@ -115,7 +115,8 @@ curl -X POST http://localhost:8080/api/messages \
 ## Технологии
 
 - Spring Boot 3.4.5
-- MongoDB
+- Spring Web
 - Spring Data MongoDB
+- MongoDB
 - Lombok
 - RSA шифрование

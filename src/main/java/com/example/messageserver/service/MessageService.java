@@ -1,6 +1,7 @@
 package com.example.messageserver.service;
 
-import com.example.messageserver.model.Message;
+import com.example.messageserver.model.User;
+import com.example.messageserver.repository.UserRepository;
 import com.example.messageserver.repository.MessageRepository;
 import com.example.messageserver.dto.PostMessageRequestDTO;
 import com.example.messageserver.dto.GetMessagesResponseDTO;
@@ -13,79 +14,71 @@ import java.util.List;
 @Service
 public class MessageService {
     
+    private final UserRepository userRepository;
     private final MessageRepository messageRepository;
-    private final UserService userService;
-    private final EncryptionService encryptionService;
+    // private final UserService userService;
+    // private final EncryptionService encryptionService;
     
-    public MessageService(MessageRepository messageRepository, UserService userService, EncryptionService encryptionService) {
+    public MessageService(UserRepository userRepository, MessageRepository messageRepository) {
+        this.userRepository = userRepository;
         this.messageRepository = messageRepository;
-        this.userService = userService;
-        this.encryptionService = encryptionService;
+        // this.userService = userService;
+        // this.encryptionService = encryptionService;
     }
     
     public String addMessage(PostMessageRequestDTO messageDTO) {
-        // Get recipient's public key
-        String recipientPublicKey = userService.getUserPublicKey(messageDTO.getRecipient());
-        if (recipientPublicKey == null) {
-            throw new RuntimeException("Получатель не найден");
+        User sender = userRepository.findByName(messageDTO.getUsername());
+        User recipient = userRepository.findByName(messageDTO.getRecipient());
+        
+        if (sender == null || recipient == null) {
+            throw new RuntimeException("Отправитель или получатель не найден");
         }
         
-        // Encrypt the message
-        String encryptedContent = encryptionService.encryptMessage(messageDTO.getContent(), recipientPublicKey);
+        // Шифруем сообщение для получателя
+        // String encryptedText = encryptionService.encryptMessage(messageDTO.getText(), recipient.getPublicKey());
         
-        Message message = new Message();
-        message.setContent(encryptedContent);
-        message.setUsername(messageDTO.getUsername());
-        message.setRecipient(messageDTO.getRecipient());
-        message.setIsSentByMe(true);
-        message.setTimestamp(LocalDateTime.now());
+        // Добавляем сообщение в список получателя
+        User.Recipient recipientObj = findOrCreateRecipient(recipient, messageDTO.getUsername());
+        User.UserMessage message = new User.UserMessage();
+        message.setText(messageDTO.getText());
+        message.setSentByMe(false);
+        recipientObj.getMessages().add(message);
         
-        Message savedMessage = messageRepository.save(message);
+        // Добавляем сообщение в список отправителя
+        User.Recipient senderObj = findOrCreateRecipient(sender, messageDTO.getRecipient());
+        User.UserMessage senderMessage = new User.UserMessage();
+        senderMessage.setText(messageDTO.getText());
+        senderMessage.setSentByMe(true);
+        senderObj.getMessages().add(senderMessage);
         
-        // If username and recipient are different, create a second message
-        if (!messageDTO.getUsername().equals(messageDTO.getRecipient())) {
-            // Get sender's public key for the second message
-            String senderPublicKey = userService.getUserPublicKey(messageDTO.getUsername());
-            if (senderPublicKey == null) {
-                throw new RuntimeException("Отправитель не найден");
-            }
-            
-            // Encrypt the message with sender's public key
-            String encryptedContentForSender = encryptionService.encryptMessage(messageDTO.getContent(), senderPublicKey);
-            
-            Message secondMessage = new Message();
-            secondMessage.setContent(encryptedContentForSender);
-            secondMessage.setUsername(messageDTO.getRecipient());
-            secondMessage.setRecipient(messageDTO.getUsername());
-            secondMessage.setIsSentByMe(false);
-            secondMessage.setTimestamp(LocalDateTime.now());
-            
-            messageRepository.save(secondMessage);
-        }
+        // Сохраняем изменения
+        userRepository.save(recipient);
+        userRepository.save(sender);
         
-        return savedMessage.getId();
+        return messageDTO.getUsername() + "_" + messageDTO.getRecipient() + "_" + LocalDateTime.now();
     }
     
     public List<GetMessagesResponseDTO> getMessages(String username, String recipient) {
-        List<Message> messages = messageRepository.findByUsernameAndRecipient(
-            username, recipient);
-        List<GetMessagesResponseDTO> messageDTOs = new ArrayList<>();
-        
-        for (Message message : messages) {
-            GetMessagesResponseDTO dto = new GetMessagesResponseDTO(
-                message.getUsername(),
-                message.getRecipient(),
-                message.getTimestamp(),
-                message.getIsSentByMe(),
-                message.getContent()
-            );
-            messageDTOs.add(dto);
+        User user = messageRepository.findByUsernameAndRecipientName(username, recipient);
+        if (user == null || user.getRecipients().isEmpty()) {
+            return new ArrayList<>();
         }
         
-        return messageDTOs;
+        return user.getRecipients().get(0).getMessages().stream()
+            .map(msg -> new GetMessagesResponseDTO(msg.getText(), LocalDateTime.now(), msg.isSentByMe()))
+            .toList();
     }
     
-    public void deleteAllMessages() {
-        messageRepository.deleteAll();
+    private User.Recipient findOrCreateRecipient(User user, String recipientName) {
+        return user.getRecipients().stream()
+            .filter(r -> r.getRecipient().equals(recipientName))
+            .findFirst()
+            .orElseGet(() -> {
+                User.Recipient newRecipient = new User.Recipient();
+                newRecipient.setRecipient(recipientName);
+                newRecipient.setMessages(new ArrayList<>());
+                user.getRecipients().add(newRecipient);
+                return newRecipient;
+            });
     }
 } 

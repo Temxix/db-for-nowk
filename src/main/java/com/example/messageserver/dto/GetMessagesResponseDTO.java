@@ -5,23 +5,17 @@ import java.time.LocalDateTime;
 
 @Data
 public class GetMessagesResponseDTO {
-    private String username;
-    private String recipient;
+    private String text;
     private LocalDateTime timestamp;
-    private boolean isSentByMe;
-    private String content;
+    private boolean sentByMe;
     
     public GetMessagesResponseDTO(
-        String username,
-        String recipient,
+        String text,
         LocalDateTime timestamp,
-        boolean isSentByMe,
-        String content
+        boolean sentByMe
     ) {
-        this.username = username;
-        this.recipient = recipient;
+        this.text = text;
         this.timestamp = timestamp;
-        this.isSentByMe = isSentByMe;
-        this.content = content;
+        this.sentByMe = sentByMe;
     }
 } 

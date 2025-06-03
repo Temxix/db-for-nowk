@@ -31,8 +31,12 @@ public class UserController {
         user.setName(userDTO.getName());
         user.setPublicKey(userDTO.getPublicKey());
         
-        userService.registerUser(user);
-        return ResponseEntity.ok(user);
+        try {
+            userService.registerUser(user);
+            return ResponseEntity.ok(user);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(409).body(null);
+        }
     }
     
     @GetMapping("/names")
@@ -53,5 +57,14 @@ public class UserController {
     public ResponseEntity<Void> deleteAllUsers() {
         userService.deleteAllUsers();
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/recipients")
+    public ResponseEntity<List<String>> getRecipients(@RequestParam String username) {
+        try {
+            return ResponseEntity.ok(userService.getRecipients(username));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(404).body(null);
+        }
     }
 } 

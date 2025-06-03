@@ -1,13 +1,12 @@
 package com.example.messageserver.repository;
 
-import com.example.messageserver.model.Message;
+import com.example.messageserver.model.User;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
-import java.util.List;
 
 @Repository
-public interface MessageRepository extends MongoRepository<Message, String> {
-    List<Message> findByRecipient(String recipient);
-    List<Message> findByUsername(String username);
-    List<Message> findByUsernameAndRecipient(String username, String recipient);
+public interface MessageRepository extends MongoRepository<User, String> {  
+    @Query(value = "{ 'name' : ?0, 'recipients.recipient' : ?1 }", fields = "{ 'recipients.$' : 1 }")
+    User findByUsernameAndRecipientName(String username, String recipient);
 } 

@@ -6,11 +6,11 @@ import lombok.Data;
 public class PostMessageRequestDTO {
     private String username;
     private String recipient;
-    private String content;
+    private String text;
     
-    public PostMessageRequestDTO(String username, String recipient, String content) {
+    public PostMessageRequestDTO(String username, String recipient, String text) {
         this.username = username;
         this.recipient = recipient;
-        this.content = content;
+        this.text = text;
     }
 } 
