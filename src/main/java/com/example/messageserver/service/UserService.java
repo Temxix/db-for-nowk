@@ -24,7 +24,9 @@ public class UserService {
     }
     
     public List<String> getAllUserNames() {
-        return userRepository.findAllNames();
+        return userRepository.findAllNames().stream()
+                .map(User::getName)
+                .toList();
     }
     
     public String getWelcomeMessage(String name) {
