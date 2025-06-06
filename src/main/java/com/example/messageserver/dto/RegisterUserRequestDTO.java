@@ -5,5 +5,5 @@ import lombok.Data;
 @Data
 public class RegisterUserRequestDTO {
     private String name;
-    private String publicKey;
+    private String public_key;
 }

@@ -4,8 +4,12 @@ import com.example.messageserver.model.User;
 import com.example.messageserver.service.UserService;
 import com.example.messageserver.dto.GetUsersResponseDTO;
 import com.example.messageserver.dto.RegisterUserRequestDTO;
+import com.example.messageserver.exception.UserAlreadyExistsException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -13,6 +17,7 @@ import java.util.List;
 @RequestMapping("/api/users")
 public class UserController {
     
+    private static final Logger log = LoggerFactory.getLogger(UserController.class);
     private final UserService userService;
     
     public UserController(UserService userService) {
@@ -21,23 +26,28 @@ public class UserController {
     
     @PostMapping("/register")
     public ResponseEntity<User> registerUser(@RequestBody RegisterUserRequestDTO userDTO) {
-        if (userDTO.getName() == null || userDTO.getName().trim().isEmpty()) {
-            return ResponseEntity.badRequest().build();
-        }
-        if (userDTO.getPublicKey() == null || userDTO.getPublicKey().trim().isEmpty()) {
+        if (!isValidUserDTO(userDTO)) {
             return ResponseEntity.badRequest().build();
         }
         
         User user = new User();
-        user.setName(userDTO.getName());
-        user.setPublicKey(userDTO.getPublicKey());
+        user.setName(userDTO.getName().trim());
         
         try {
             userService.registerUser(user);
             return ResponseEntity.ok(user);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(409).body(null);
+        } catch (UserAlreadyExistsException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        } catch (Exception e) {
+            log.error("Error registering user: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+    
+    private boolean isValidUserDTO(RegisterUserRequestDTO userDTO) {
+        return userDTO != null 
+            && userDTO.getName() != null 
+            && !userDTO.getName().trim().isEmpty();
     }
     
     @GetMapping("/names")
