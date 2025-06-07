@@ -25,29 +25,39 @@ public class UserController {
     }
     
     @PostMapping("/register")
-    public ResponseEntity<User> registerUser(@RequestBody RegisterUserRequestDTO userDTO) {
+    public ResponseEntity<?> registerUser(@RequestBody RegisterUserRequestDTO userDTO) {
+        log.info("Received registration request for user: {}", userDTO != null ? userDTO.getName() : "null");
+        
         if (!isValidUserDTO(userDTO)) {
-            return ResponseEntity.badRequest().build();
+            log.warn("Invalid user DTO received");
+            return ResponseEntity.badRequest().body("Неверные данные пользователя");
         }
         
         User user = new User();
         user.setName(userDTO.getName().trim());
+        user.setPublicKey(userDTO.getPublic_key().trim());
+        log.info("Created user object with name: {}", user.getName());
         
         try {
+            log.info("Attempting to register user in service");
             userService.registerUser(user);
+            log.info("User successfully registered");
             return ResponseEntity.ok(user);
         } catch (UserAlreadyExistsException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+            log.warn("User already exists: {}", user.getName());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         } catch (Exception e) {
-            log.error("Error registering user: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            log.error("Error registering user: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Внутренняя ошибка сервера");
         }
     }
     
     private boolean isValidUserDTO(RegisterUserRequestDTO userDTO) {
         return userDTO != null 
             && userDTO.getName() != null 
-            && !userDTO.getName().trim().isEmpty();
+            && !userDTO.getName().trim().isEmpty()
+            && userDTO.getPublic_key() != null
+            && !userDTO.getPublic_key().trim().isEmpty();
     }
     
     @GetMapping("/names")

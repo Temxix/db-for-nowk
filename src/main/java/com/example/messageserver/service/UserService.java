@@ -2,12 +2,17 @@ package com.example.messageserver.service;
 
 import com.example.messageserver.model.User;
 import com.example.messageserver.repository.UserRepository;
+import com.example.messageserver.exception.UserAlreadyExistsException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class UserService {
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
+    
     private final UserRepository userRepository;
     private final EncryptionService encryptionService;
     
@@ -17,10 +22,17 @@ public class UserService {
     }
     
     public void registerUser(User user) {
+        log.info("Starting user registration process for user: {}", user.getName());
+        
+        log.debug("Checking if user already exists");
         if (userRepository.findByName(user.getName()) != null) {
-            throw new RuntimeException("Пользователь с таким именем уже существует");
+            log.warn("User with name '{}' already exists", user.getName());
+            throw new UserAlreadyExistsException("Пользователь с таким именем уже существует");
         }
+        
+        log.info("Saving new user to repository");
         userRepository.save(user);
+        log.info("User '{}' successfully saved", user.getName());
     }
     
     public List<String> getAllUserNames() {
