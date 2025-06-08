@@ -17,27 +17,16 @@ public class User {
 
     @Data
     public static class Chat {
+        @Id
+        private String id;
         private String recipient;
-        private List<UserMessage> messages;
+        private List<String> messageIds;
         private boolean hasNewMessages;
         private LocalDateTime lastActivity;
 
         public Chat() {
             this.hasNewMessages = false;
             this.lastActivity = LocalDateTime.now();
-        }
-    }
-
-    @Data
-    public static class UserMessage {
-        private String text;
-        private boolean sentByMe;
-        private LocalDateTime timestamp;
-
-        public UserMessage(String text, boolean sentByMe) {
-            this.text = text;
-            this.sentByMe = sentByMe;
-            this.timestamp = LocalDateTime.now();
         }
     }
 } 
