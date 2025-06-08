@@ -61,13 +61,13 @@ public class UserService {
         return user != null ? user.getPublicKey() : null;
     }
 
-    public List<String> getRecipients(String username) {
+    public List<String> getChats(String username) {
         User user = userRepository.findRecipientNamesByName(username);
         if (user == null) {
             throw new RuntimeException("Пользователь не найден");
         }
-        return user.getRecipients().stream()
-                .map(User.Recipient::getRecipient)
+        return user.getChats().stream()
+                .map(User.Chat::getRecipient)
                 .toList();
     }
 } 

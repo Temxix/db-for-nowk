@@ -7,6 +7,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface MessageRepository extends MongoRepository<User, String> {  
-    @Query(value = "{ 'name' : ?0, 'recipients.recipient' : ?1 }", fields = "{ 'recipients.$' : 1 }")
+    @Query(value = "{ 'name' : ?0, 'chats.recipient' : ?1 }", fields = "{ 'chats.$' : 1 }")
     User findByUsernameAndRecipientName(String username, String recipient);
 } 

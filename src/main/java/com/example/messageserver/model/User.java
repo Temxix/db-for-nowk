@@ -4,6 +4,7 @@ import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.List;
+import java.time.LocalDateTime;
 
 @Data
 @Document(collection = "users")
@@ -12,10 +13,10 @@ public class User {
     private String id;
     private String name;
     private String publicKey;
-    private List<Recipient> recipients;
+    private List<Chat> chats;
 
     @Data
-    public static class Recipient {
+    public static class Chat {
         private String recipient;
         private List<UserMessage> messages;
     }
@@ -24,5 +25,12 @@ public class User {
     public static class UserMessage {
         private String text;
         private boolean sentByMe;
+        private LocalDateTime timestamp;
+
+        public UserMessage(String text, boolean sentByMe) {
+            this.text = text;
+            this.sentByMe = sentByMe;
+            this.timestamp = LocalDateTime.now();
+        }
     }
 } 

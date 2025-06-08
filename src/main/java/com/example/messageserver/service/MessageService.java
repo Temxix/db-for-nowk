@@ -38,47 +38,45 @@ public class MessageService {
         // String encryptedText = encryptionService.encryptMessage(messageDTO.getText(), recipient.getPublicKey());
         
         // Добавляем сообщение в список получателя
-        User.Recipient recipientObj = findOrCreateRecipient(recipient, messageDTO.getUsername());
-        User.UserMessage message = new User.UserMessage();
-        message.setText(messageDTO.getText());
-        message.setSentByMe(false);
+        User.Chat recipientObj = findOrCreateChat(recipient, messageDTO.getUsername());
+        User.UserMessage message = new User.UserMessage(messageDTO.getText(), false);
         recipientObj.getMessages().add(message);
         
         // Добавляем сообщение в список отправителя
-        User.Recipient senderObj = findOrCreateRecipient(sender, messageDTO.getRecipient());
-        User.UserMessage senderMessage = new User.UserMessage();
-        senderMessage.setText(messageDTO.getText());
-        senderMessage.setSentByMe(true);
+        User.Chat senderObj = findOrCreateChat(sender, messageDTO.getRecipient());
+        User.UserMessage senderMessage = new User.UserMessage(messageDTO.getText(), true);
         senderObj.getMessages().add(senderMessage);
         
         // Сохраняем изменения
         userRepository.save(recipient);
         userRepository.save(sender);
         
-        return messageDTO.getUsername() + "_" + messageDTO.getRecipient() + "_" + LocalDateTime.now();
+        return messageDTO.getUsername() + "_" + messageDTO.getRecipient() + "_" + message.getTimestamp();
     }
     
-    public List<GetMessagesResponseDTO> getMessages(String username, String recipient) {
+    public GetMessagesResponseDTO getMessages(String username, String recipient) {
         User user = messageRepository.findByUsernameAndRecipientName(username, recipient);
-        if (user == null || user.getRecipients().isEmpty()) {
-            return new ArrayList<>();
+        if (user == null || user.getChats().isEmpty()) {
+            return new GetMessagesResponseDTO(new ArrayList<>());
         }
         
-        return user.getRecipients().get(0).getMessages().stream()
-            .map(msg -> new GetMessagesResponseDTO(msg.getText(), LocalDateTime.now(), msg.isSentByMe()))
+        List<GetMessagesResponseDTO.Message> messages = user.getChats().get(0).getMessages().stream()
+            .map(msg -> new GetMessagesResponseDTO.Message(msg.getText(), msg.getTimestamp(), msg.isSentByMe()))
             .toList();
+            
+        return new GetMessagesResponseDTO(messages);
     }
     
-    private User.Recipient findOrCreateRecipient(User user, String recipientName) {
-        return user.getRecipients().stream()
+    private User.Chat findOrCreateChat(User user, String recipientName) {
+        return user.getChats().stream()
             .filter(r -> r.getRecipient().equals(recipientName))
             .findFirst()
             .orElseGet(() -> {
-                User.Recipient newRecipient = new User.Recipient();
-                newRecipient.setRecipient(recipientName);
-                newRecipient.setMessages(new ArrayList<>());
-                user.getRecipients().add(newRecipient);
-                return newRecipient;
+                User.Chat newChat = new User.Chat();
+                newChat.setRecipient(recipientName);
+                newChat.setMessages(new ArrayList<>());
+                user.getChats().add(newChat);
+                return newChat;
             });
     }
 } 

@@ -83,10 +83,10 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/recipients")
-    public ResponseEntity<List<String>> getRecipients(@RequestParam String username) {
+    @GetMapping("/chats")
+    public ResponseEntity<List<String>> getChats(@RequestParam String username) {
         try {
-            return ResponseEntity.ok(userService.getRecipients(username));
+            return ResponseEntity.ok(userService.getChats(username));
         } catch (RuntimeException e) {
             return ResponseEntity.status(404).body(null);
         }

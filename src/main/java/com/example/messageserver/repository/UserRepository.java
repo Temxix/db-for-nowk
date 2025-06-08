@@ -14,6 +14,6 @@ public interface UserRepository extends MongoRepository<User, String> {
     @Query(value = "{}", fields = "{ 'name' : 1, '_id' : 0 }")
     List<User> findAllNames();
     
-    @Query(value = "{ 'name' : ?0 }", fields = "{ 'recipients.recipient' : 1 }")
+    @Query(value = "{ 'name' : ?0 }", fields = "{ 'chats.recipient' : 1 }")
     User findRecipientNamesByName(String name);
 }

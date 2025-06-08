@@ -36,7 +36,7 @@ public class MessageController {
     }
     
     @GetMapping
-    public ResponseEntity<List<GetMessagesResponseDTO>> getMessages(
+    public ResponseEntity<GetMessagesResponseDTO> getMessages(
             @RequestParam String username,
             @RequestParam String recipient) {
         if (username == null || username.trim().isEmpty()) {
