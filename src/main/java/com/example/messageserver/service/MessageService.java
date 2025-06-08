@@ -41,6 +41,7 @@ public class MessageService {
         User.Chat recipientObj = findOrCreateChat(recipient, messageDTO.getUsername());
         User.UserMessage message = new User.UserMessage(messageDTO.getText(), false);
         recipientObj.getMessages().add(message);
+        recipientObj.setHasNewMessages(true);
         
         // Добавляем сообщение в список отправителя
         User.Chat senderObj = findOrCreateChat(sender, messageDTO.getRecipient());
@@ -60,9 +61,14 @@ public class MessageService {
             return new GetMessagesResponseDTO(new ArrayList<>());
         }
         
-        List<GetMessagesResponseDTO.Message> messages = user.getChats().get(0).getMessages().stream()
+        User.Chat chat = user.getChats().get(0);
+        List<GetMessagesResponseDTO.Message> messages = chat.getMessages().stream()
             .map(msg -> new GetMessagesResponseDTO.Message(msg.getText(), msg.getTimestamp(), msg.isSentByMe()))
             .toList();
+            
+        // Помечаем чат как прочитанный при получении сообщений
+        chat.setHasNewMessages(false);
+        userRepository.save(user);
             
         return new GetMessagesResponseDTO(messages);
     }
@@ -75,6 +81,7 @@ public class MessageService {
                 User.Chat newChat = new User.Chat();
                 newChat.setRecipient(recipientName);
                 newChat.setMessages(new ArrayList<>());
+                newChat.setHasNewMessages(false);
                 user.getChats().add(newChat);
                 return newChat;
             });

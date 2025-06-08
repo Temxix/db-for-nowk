@@ -19,6 +19,13 @@ public class User {
     public static class Chat {
         private String recipient;
         private List<UserMessage> messages;
+        private boolean hasNewMessages;
+        private LocalDateTime lastActivity;
+
+        public Chat() {
+            this.hasNewMessages = false;
+            this.lastActivity = LocalDateTime.now();
+        }
     }
 
     @Data

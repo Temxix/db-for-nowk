@@ -1,9 +1,10 @@
 package com.example.messageserver.controller;
 
-import com.example.messageserver.model.User;
 import com.example.messageserver.service.UserService;
 import com.example.messageserver.dto.GetUsersResponseDTO;
+import com.example.messageserver.dto.GetUserChatsResponseDTO;
 import com.example.messageserver.dto.RegisterUserRequestDTO;
+import com.example.messageserver.dto.UserResponseDTO;
 import com.example.messageserver.exception.UserAlreadyExistsException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
@@ -33,18 +34,13 @@ public class UserController {
             return ResponseEntity.badRequest().body("Неверные данные пользователя");
         }
         
-        User user = new User();
-        user.setName(userDTO.getName().trim());
-        user.setPublicKey(userDTO.getPublic_key().trim());
-        log.info("Created user object with name: {}", user.getName());
-        
         try {
             log.info("Attempting to register user in service");
-            userService.registerUser(user);
+            UserResponseDTO responseDTO = userService.registerUser(userDTO);
             log.info("User successfully registered");
-            return ResponseEntity.ok(user);
+            return ResponseEntity.ok(responseDTO);
         } catch (UserAlreadyExistsException e) {
-            log.warn("User already exists: {}", user.getName());
+            log.warn("User already exists: {}", userDTO.getName());
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         } catch (Exception e) {
             log.error("Error registering user: {}", e.getMessage(), e);
@@ -56,8 +52,8 @@ public class UserController {
         return userDTO != null 
             && userDTO.getName() != null 
             && !userDTO.getName().trim().isEmpty()
-            && userDTO.getPublic_key() != null
-            && !userDTO.getPublic_key().trim().isEmpty();
+            && userDTO.getPublicKey() != null
+            && !userDTO.getPublicKey().trim().isEmpty();
     }
     
     @GetMapping("/names")
@@ -84,7 +80,7 @@ public class UserController {
     }
 
     @GetMapping("/chats")
-    public ResponseEntity<List<String>> getChats(@RequestParam String username) {
+    public ResponseEntity<GetUserChatsResponseDTO> getChats(@RequestParam String username) {
         try {
             return ResponseEntity.ok(userService.getChats(username));
         } catch (RuntimeException e) {
