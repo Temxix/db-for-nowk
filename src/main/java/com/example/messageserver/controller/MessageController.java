@@ -8,8 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/messages")
 public class MessageController {
@@ -22,30 +20,43 @@ public class MessageController {
     
     @PostMapping
     public ResponseEntity<PostMessageResponseDTO> sendMessage(@RequestBody PostMessageRequestDTO message) {
+        // Проверяем валидность данных
         if (message.getText() == null || message.getText().trim().isEmpty()) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(new PostMessageResponseDTO("Текст сообщения не может быть пустым", null));
         }
         if (message.getUsername() == null || message.getUsername().trim().isEmpty()) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(new PostMessageResponseDTO("Имя отправителя не может быть пустым", null));
         }
         if (message.getRecipient() == null || message.getRecipient().trim().isEmpty()) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(new PostMessageResponseDTO("Имя получателя не может быть пустым", null));
         }
-        String messageId = messageService.addMessage(message);
-        return ResponseEntity.ok(new PostMessageResponseDTO("Сообщение добавлено", messageId));
+        
+        try {
+            String messageId = messageService.addMessage(message);
+            return ResponseEntity.ok(new PostMessageResponseDTO("Сообщение успешно отправлено", messageId));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(new PostMessageResponseDTO(e.getMessage(), null));
+        }
     }
     
     @GetMapping
     public ResponseEntity<GetMessagesResponseDTO> getMessages(
             @RequestParam String username,
             @RequestParam String recipient) {
+        // Проверяем валидность параметров
         if (username == null || username.trim().isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
         if (recipient == null || recipient.trim().isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
-        return ResponseEntity.ok(messageService.getMessages(username, recipient));
+        
+        try {
+            GetMessagesResponseDTO messages = messageService.getMessages(username, recipient);
+            return ResponseEntity.ok(messages);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
     
     @ExceptionHandler(Exception.class)

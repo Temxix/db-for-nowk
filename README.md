@@ -42,13 +42,6 @@ mvn spring-boot:run
 - hasNewMessages: флаг наличия новых сообщений
 - lastActivity: время последней активности
 
-### Сообщение (Message)
-- id: уникальный идентификатор
-- chatId: идентификатор чата
-- text: текст сообщения
-- sentByMe: флаг, указывающий, отправлено ли сообщение текущим пользователем
-- timestamp: время отправки сообщения
-
 ## API Endpoints
 
 ### Пользователи
@@ -83,7 +76,7 @@ POST /api/messages
 Content-Type: application/json
 
 {
-    "content": "текст_сообщения",
+    "text": "текст_сообщения",
     "username": "отправитель",
     "recipient": "получатель"
 }
@@ -131,7 +124,7 @@ curl http://localhost:8080/api/messages?username=test&recipient=user2
 ```bash
 curl -X POST http://localhost:8080/api/messages \
   -H "Content-Type: application/json" \
-  -d '{"content":"Привет!","username":"user1","recipient":"user2"}'
+  -d '{"text":"Привет!","username":"user1","recipient":"user2"}'
 ```
 
 ## Технологии

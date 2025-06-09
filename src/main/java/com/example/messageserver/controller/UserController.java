@@ -5,6 +5,8 @@ import com.example.messageserver.dto.GetUsersResponseDTO;
 import com.example.messageserver.dto.GetUserChatsResponseDTO;
 import com.example.messageserver.dto.RegisterUserRequestDTO;
 import com.example.messageserver.dto.UserResponseDTO;
+import com.example.messageserver.dto.CreateChatRequestDTO;
+import com.example.messageserver.dto.ChatResponseDTO;
 import com.example.messageserver.exception.UserAlreadyExistsException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
@@ -79,12 +81,42 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/chats")
+    @GetMapping("/chats/list")
     public ResponseEntity<GetUserChatsResponseDTO> getChats(@RequestParam String username) {
         try {
             return ResponseEntity.ok(userService.getChats(username));
         } catch (RuntimeException e) {
             return ResponseEntity.status(404).body(null);
         }
+    }
+
+    @PostMapping("/chats")
+    public ResponseEntity<?> createChat(@RequestBody CreateChatRequestDTO request) {
+        log.info("Received request to create chat between {} and {}", 
+            request.getUsername(), request.getRecipient());
+        
+        if (!isValidChatRequest(request)) {
+            log.warn("Invalid chat creation request - empty username or recipient");
+            return ResponseEntity.badRequest().body("Имя пользователя и получателя не могут быть пустыми");
+        }
+        
+        try {
+            ChatResponseDTO response = userService.createChat(request.getUsername(), request.getRecipient());
+            log.info("Chat successfully created between {} and {} with id {}", 
+                request.getUsername(), request.getRecipient(), response.getChatId());
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            log.error("Error creating chat: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body("Пользователь не найден: " + e.getMessage());
+        }
+    }
+
+    private boolean isValidChatRequest(CreateChatRequestDTO request) {
+        return request != null 
+            && request.getUsername() != null 
+            && !request.getUsername().trim().isEmpty()
+            && request.getRecipient() != null 
+            && !request.getRecipient().trim().isEmpty();
     }
 } 
