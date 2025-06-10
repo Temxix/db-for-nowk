@@ -5,6 +5,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.List;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 
 @Data
 @Document(collection = "users")
@@ -17,7 +18,6 @@ public class User {
 
     @Data
     public static class Chat {
-        @Id
         private String id;
         private String recipient;
         private List<String> messageIds;
@@ -26,7 +26,7 @@ public class User {
 
         public Chat() {
             this.hasNewMessages = false;
-            this.lastActivity = LocalDateTime.now();
+            this.messageIds = new ArrayList<>();
         }
     }
 } 

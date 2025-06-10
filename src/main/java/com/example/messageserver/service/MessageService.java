@@ -7,14 +7,18 @@ import com.example.messageserver.dto.PostMessageRequestDTO;
 import com.example.messageserver.dto.GetMessagesResponseDTO;
 import org.springframework.stereotype.Service;
 import com.example.messageserver.model.Message;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class MessageService {
     
+    private static final Logger log = LoggerFactory.getLogger(MessageService.class);
     private final UserRepository userRepository;
     private final MessageRepository messageRepository;
     
@@ -24,16 +28,20 @@ public class MessageService {
     }
     
     public String addMessage(PostMessageRequestDTO messageDTO) {
+        log.info("Получен запрос на отправку сообщения от {} к {}", messageDTO.getUsername(), messageDTO.getRecipient());
+        
         // Находим отправителя и получателя
         User sender = userRepository.findByName(messageDTO.getUsername());
         User recipient = userRepository.findByName(messageDTO.getRecipient());
         
         if (sender == null || recipient == null) {
+            log.error("Отправитель или получатель не найден");
             throw new RuntimeException("Отправитель или получатель не найден");
         }
         
+        String chatId = UUID.randomUUID().toString();
+        
         // Создаем сообщение для получателя
-        String chatId = messageDTO.getUsername() + "_" + messageDTO.getRecipient();
         Message recipientMessage = new Message(messageDTO.getText(), false, chatId);
         messageRepository.save(recipientMessage);
         
@@ -41,14 +49,16 @@ public class MessageService {
         Message senderMessage = new Message(messageDTO.getText(), true, chatId);
         messageRepository.save(senderMessage);
         
-        // Добавляем сообщение в чат получателя
+        // Создаем или находим чат для получателя
         User.Chat recipientChat = findOrCreateChat(recipient, messageDTO.getUsername());
+        recipientChat.setId(chatId);
         recipientChat.getMessageIds().add(recipientMessage.getId());
         recipientChat.setHasNewMessages(true);
         recipientChat.setLastActivity(LocalDateTime.now());
         
-        // Добавляем сообщение в чат отправителя
+        // Создаем или находим чат для отправителя
         User.Chat senderChat = findOrCreateChat(sender, messageDTO.getRecipient());
+        senderChat.setId(chatId);
         senderChat.getMessageIds().add(senderMessage.getId());
         senderChat.setLastActivity(LocalDateTime.now());
         
@@ -56,6 +66,7 @@ public class MessageService {
         userRepository.save(recipient);
         userRepository.save(sender);
         
+        log.info("Сообщение успешно отправлено и сохранено");
         return recipientMessage.getId();
     }
     
@@ -66,7 +77,7 @@ public class MessageService {
         }
         
         User.Chat chat = findOrCreateChat(user, recipient);
-        List<GetMessagesResponseDTO.Message> messages = new ArrayList<>();
+        GetMessagesResponseDTO messages = new GetMessagesResponseDTO();
         
         // Получаем сообщения по их ID
         for (String messageId : chat.getMessageIds()) {
@@ -84,7 +95,7 @@ public class MessageService {
         chat.setHasNewMessages(false);
         userRepository.save(user);
         
-        return new GetMessagesResponseDTO(messages);
+        return messages;
     }
     
     private User.Chat findOrCreateChat(User user, String recipientName) {
@@ -96,7 +107,6 @@ public class MessageService {
                 newChat.setRecipient(recipientName);
                 newChat.setMessageIds(new ArrayList<>());
                 newChat.setHasNewMessages(false);
-                newChat.setLastActivity(LocalDateTime.now());
                 user.getChats().add(newChat);
                 return newChat;
             });

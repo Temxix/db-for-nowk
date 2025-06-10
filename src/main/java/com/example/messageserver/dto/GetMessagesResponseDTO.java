@@ -3,10 +3,10 @@ package com.example.messageserver.dto;
 import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.ArrayList;
 
 @Data
-public class GetMessagesResponseDTO {
-    private List<Message> messages;
+public class GetMessagesResponseDTO extends ArrayList<GetMessagesResponseDTO.Message> {
     
     @Data
     public static class Message {
@@ -19,9 +19,5 @@ public class GetMessagesResponseDTO {
             this.timestamp = timestamp;
             this.sentByMe = sentByMe;
         }
-    }
-    
-    public GetMessagesResponseDTO(List<Message> messages) {
-        this.messages = messages;
     }
 } 

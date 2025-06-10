@@ -6,7 +6,7 @@ import com.example.messageserver.exception.UserAlreadyExistsException;
 import com.example.messageserver.dto.GetUserChatsResponseDTO;
 import com.example.messageserver.dto.RegisterUserRequestDTO;
 import com.example.messageserver.dto.UserResponseDTO;
-import com.example.messageserver.dto.ChatResponseDTO;
+import com.example.messageserver.dto.WelcomeMessageResponseDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -17,7 +17,6 @@ import java.util.stream.Collectors;
 import java.util.ArrayList;
 import java.time.ZoneOffset;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Service
 public class UserService {
@@ -72,15 +71,17 @@ public class UserService {
                 .toList();
     }
     
-    public String getWelcomeMessage(String name) {
+    public WelcomeMessageResponseDTO getWelcomeMessage(String name) {
+        log.info("Получен запрос приветственного сообщения для пользователя: {}", name);
         Optional<User> user = Optional.ofNullable(userRepository.findByName(name));
         
         if (user.isEmpty()) {
-            return null;
+            log.warn("Пользователь не найден: {}", name);
+            return new WelcomeMessageResponseDTO("Пользователь не найден", name);
         }
         
-        String welcomeMessage = "Добро пожаловать!";
-        return encryptionService.encryptMessage(welcomeMessage, user.get().getPublicKey());
+        log.info("Пользователь найден: {}", name);
+        return new WelcomeMessageResponseDTO("Добро пожаловать!", name);
     }
     
     public void deleteAllUsers() {
@@ -170,56 +171,5 @@ public class UserService {
         log.debug("Final chat list: {}", allChats);
                 
         return new GetUserChatsResponseDTO(allChats);
-    }
-
-    public ChatResponseDTO createChat(String username, String recipient) {
-        User user = userRepository.findByName(username);
-        User recipientUser = userRepository.findByName(recipient);
-        
-        if (user == null) {
-            throw new RuntimeException("Пользователь " + username + " не найден");
-        }
-        if (recipientUser == null) {
-            throw new RuntimeException("Пользователь " + recipient + " не найден");
-        }
-        
-        // Проверяем, существует ли уже чат между пользователями
-        Optional<User.Chat> existingUserChat = user.getChats().stream()
-            .filter(chat -> chat.getRecipient().equals(recipient))
-            .findFirst();
-            
-        if (existingUserChat.isPresent()) {
-            log.info("Чат между {} и {} уже существует", username, recipient);
-            return new ChatResponseDTO(existingUserChat.get().getId());
-        }
-        
-        String chatId = UUID.randomUUID().toString();
-        
-        // Создаем чат для первого пользователя
-        User.Chat userChat = new User.Chat();
-        userChat.setId(chatId);
-        userChat.setRecipient(recipient);
-        userChat.setMessageIds(new ArrayList<>());
-        userChat.setHasNewMessages(false);
-        userChat.setLastActivity(LocalDateTime.now());
-        
-        // Создаем чат для второго пользователя
-        User.Chat recipientChat = new User.Chat();
-        recipientChat.setId(chatId);
-        recipientChat.setRecipient(username);
-        recipientChat.setMessageIds(new ArrayList<>());
-        recipientChat.setHasNewMessages(false);
-        recipientChat.setLastActivity(LocalDateTime.now());
-        
-        // Добавляем чаты пользователям
-        user.getChats().add(userChat);
-        recipientUser.getChats().add(recipientChat);
-        
-        // Сохраняем изменения
-        userRepository.save(user);
-        userRepository.save(recipientUser);
-        
-        log.info("Создан новый чат между {} и {} с id {}", username, recipient, chatId);
-        return new ChatResponseDTO(chatId);
     }
 } 

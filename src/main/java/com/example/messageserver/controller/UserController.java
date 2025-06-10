@@ -5,8 +5,7 @@ import com.example.messageserver.dto.GetUsersResponseDTO;
 import com.example.messageserver.dto.GetUserChatsResponseDTO;
 import com.example.messageserver.dto.RegisterUserRequestDTO;
 import com.example.messageserver.dto.UserResponseDTO;
-import com.example.messageserver.dto.CreateChatRequestDTO;
-import com.example.messageserver.dto.ChatResponseDTO;
+import com.example.messageserver.dto.WelcomeMessageResponseDTO;
 import com.example.messageserver.exception.UserAlreadyExistsException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
@@ -29,24 +28,29 @@ public class UserController {
     
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody RegisterUserRequestDTO userDTO) {
-        log.info("Received registration request for user: {}", userDTO != null ? userDTO.getName() : "null");
+        log.info("Получен запрос на регистрацию пользователя: {}", userDTO != null ? userDTO.getName() : "null");
         
         if (!isValidUserDTO(userDTO)) {
-            log.warn("Invalid user DTO received");
+            log.warn("Неверные данные пользователя");
             return ResponseEntity.badRequest().body("Неверные данные пользователя");
+        }
+
+        // Проверяем существование пользователя
+        if (userService.getUserPublicKey(userDTO.getName()) != null) {
+            log.warn("Пользователь с именем '{}' уже существует", userDTO.getName());
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body("Пользователь с таким именем уже существует");
         }
         
         try {
-            log.info("Attempting to register user in service");
+            log.info("Попытка регистрации пользователя в сервисе");
             UserResponseDTO responseDTO = userService.registerUser(userDTO);
-            log.info("User successfully registered");
+            log.info("Пользователь успешно зарегистрирован");
             return ResponseEntity.ok(responseDTO);
-        } catch (UserAlreadyExistsException e) {
-            log.warn("User already exists: {}", userDTO.getName());
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         } catch (Exception e) {
-            log.error("Error registering user: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Внутренняя ошибка сервера");
+            log.error("Ошибка при регистрации пользователя: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Внутренняя ошибка сервера");
         }
     }
     
@@ -67,12 +71,15 @@ public class UserController {
     }
     
     @GetMapping("/welcome")
-    public ResponseEntity<String> getWelcomeMessage(@RequestParam String name) {
-        String message = userService.getWelcomeMessage(name);
-        if (message == null) {
+    public ResponseEntity<?> getWelcomeMessage(@RequestParam String name) {
+        log.info("Получен запрос welcome для пользователя: {}", name);
+        WelcomeMessageResponseDTO response = userService.getWelcomeMessage(name);
+        if (response == null) {
+            log.warn("Пользователь не найден: {}", name);
             return ResponseEntity.status(404).body("Пользователь не найден");
         }
-        return ResponseEntity.ok(message);
+        log.info("Отправлено приветственное сообщение для пользователя: {}", name);
+        return ResponseEntity.ok(response);
     }
     
     @DeleteMapping("/all")
@@ -88,35 +95,5 @@ public class UserController {
         } catch (RuntimeException e) {
             return ResponseEntity.status(404).body(null);
         }
-    }
-
-    @PostMapping("/chats")
-    public ResponseEntity<?> createChat(@RequestBody CreateChatRequestDTO request) {
-        log.info("Received request to create chat between {} and {}", 
-            request.getUsername(), request.getRecipient());
-        
-        if (!isValidChatRequest(request)) {
-            log.warn("Invalid chat creation request - empty username or recipient");
-            return ResponseEntity.badRequest().body("Имя пользователя и получателя не могут быть пустыми");
-        }
-        
-        try {
-            ChatResponseDTO response = userService.createChat(request.getUsername(), request.getRecipient());
-            log.info("Chat successfully created between {} and {} with id {}", 
-                request.getUsername(), request.getRecipient(), response.getChatId());
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            log.error("Error creating chat: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body("Пользователь не найден: " + e.getMessage());
-        }
-    }
-
-    private boolean isValidChatRequest(CreateChatRequestDTO request) {
-        return request != null 
-            && request.getUsername() != null 
-            && !request.getUsername().trim().isEmpty()
-            && request.getRecipient() != null 
-            && !request.getRecipient().trim().isEmpty();
     }
 } 
