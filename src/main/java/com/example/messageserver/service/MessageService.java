@@ -43,11 +43,8 @@ public class MessageService {
         
         String chatId = UUID.randomUUID().toString();
         
-        // Шифруем сообщение для получателя
-        String encryptedTextForRecipient = encryptionService.encryptMessage(messageDTO.getText(), recipient.getPublicKey());
-        
         // Создаем сообщение для получателя
-        Message recipientMessage = new Message(encryptedTextForRecipient, false, chatId);
+        Message recipientMessage = new Message(messageDTO.getText(), false, chatId);
         messageRepository.save(recipientMessage);
         
         // Создаем сообщение для отправителя
