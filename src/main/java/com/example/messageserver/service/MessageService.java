@@ -1,14 +1,15 @@
 package com.example.messageserver.service;
 
-import com.example.messageserver.model.Message;
 import com.example.messageserver.model.User;
-import com.example.messageserver.repository.MessageRepository;
 import com.example.messageserver.repository.UserRepository;
+import com.example.messageserver.repository.MessageRepository;
 import com.example.messageserver.dto.PostMessageRequestDTO;
 import com.example.messageserver.dto.GetMessagesResponseDTO;
+import org.springframework.stereotype.Service;
+import com.example.messageserver.model.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,24 +17,20 @@ import java.util.UUID;
 
 @Service
 public class MessageService {
+    
     private static final Logger log = LoggerFactory.getLogger(MessageService.class);
-    
-    private final MessageRepository messageRepository;
     private final UserRepository userRepository;
+    private final MessageRepository messageRepository;
+    private final EncryptionService encryptionService;
     
-    public MessageService(MessageRepository messageRepository, UserRepository userRepository) {
-        this.messageRepository = messageRepository;
+    public MessageService(UserRepository userRepository, MessageRepository messageRepository, EncryptionService encryptionService) {
         this.userRepository = userRepository;
+        this.messageRepository = messageRepository;
+        this.encryptionService = encryptionService;
     }
     
     public String addMessage(PostMessageRequestDTO messageDTO) {
         log.info("Получен запрос на отправку сообщения от {} к {}", messageDTO.getUsername(), messageDTO.getRecipient());
-        
-        // Проверяем обязательные поля
-        if (messageDTO.getHash() == null || messageDTO.getHash().trim().isEmpty()) {
-            log.error("Хеш сообщения не указан");
-            throw new RuntimeException("Хеш сообщения должен быть указан");
-        }
         
         // Находим отправителя и получателя
         User sender = userRepository.findByName(messageDTO.getUsername());
@@ -46,12 +43,15 @@ public class MessageService {
         
         String chatId = UUID.randomUUID().toString();
         
+        // Шифруем сообщение для получателя
+        String encryptedTextForRecipient = encryptionService.encryptMessage(messageDTO.getText(), recipient.getPublicKey());
+        
         // Создаем сообщение для получателя
-        Message recipientMessage = new Message(messageDTO.getText(), false, chatId, messageDTO.getHash());
+        Message recipientMessage = new Message(encryptedTextForRecipient, false, chatId);
         messageRepository.save(recipientMessage);
         
         // Создаем сообщение для отправителя
-        Message senderMessage = new Message(messageDTO.getText(), true, chatId, messageDTO.getHash());
+        Message senderMessage = new Message(messageDTO.getText(), true, chatId);
         messageRepository.save(senderMessage);
         
         // Создаем или находим чат для получателя
@@ -88,11 +88,15 @@ public class MessageService {
         for (String messageId : chat.getMessageIds()) {
             Message message = messageRepository.findById(messageId).orElse(null);
             if (message != null) {
+                String messageText = message.getText();
+                // Если сообщение не от нас, расшифровываем его
+                if (!message.isSentByMe()) {
+                    messageText = encryptionService.decryptMessage(message.getText(), user.getPrivateKey());
+                }
                 messages.add(new GetMessagesResponseDTO.Message(
-                    message.getText(),
+                    messageText,
                     message.getTimestamp(),
-                    message.isSentByMe(),
-                    message.getHash()
+                    message.isSentByMe()
                 ));
             }
         }
@@ -116,11 +120,5 @@ public class MessageService {
                 user.getChats().add(newChat);
                 return newChat;
             });
-    }
-
-    public void deleteAllMessages() {
-        log.info("Удаление всех сообщений");
-        messageRepository.deleteAll();
-        log.info("Все сообщения успешно удалены");
     }
 } 

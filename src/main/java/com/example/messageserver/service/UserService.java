@@ -81,9 +81,7 @@ public class UserService {
         }
         
         log.info("Пользователь найден: {}", name);
-        String welcomeMessage = "Добро пожаловать!";
-        String encryptedMessage = encryptionService.encryptMessage(welcomeMessage, user.get().getPublicKey());
-        return new WelcomeMessageResponseDTO(encryptedMessage, name);
+        return new WelcomeMessageResponseDTO("Добро пожаловать!", name);
     }
     
     public void deleteAllUsers() {
