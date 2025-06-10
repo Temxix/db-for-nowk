@@ -1,14 +1,20 @@
-# Используем образ с Maven и JDK
-FROM maven:3.9.6-eclipse-temurin-17
+FROM eclipse-temurin:24-jdk AS build
 
-# Устанавливаем рабочую директорию внутри контейнера
+# Устанавливаем Maven
+RUN apt-get update && apt-get install -y maven
+
 WORKDIR /app
-
-# Копируем всё в контейнер
 COPY . .
 
-# Открываем порт, на котором работает Spring Boot (по умолчанию 8080)
+# Сборка проекта
+RUN mvn clean package
+
+# Второй этап — облегчённый runtime
+FROM eclipse-temurin:24-jdk
+
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
+
 EXPOSE 8080
 
-# Запускаем приложение
-CMD ["mvn", "spring-boot:run"]
+CMD ["java", "-jar", "app.jar"]
