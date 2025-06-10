@@ -11,8 +11,7 @@ import java.util.Base64;
 
 @Service
 public class EncryptionService {
-    
-    private static final String ENCRYPTION_KEY = "your-secret-key-here"; // TODO: Вынести в конфигурацию
+    private static final String CIPHER_INSTANCE = "RSA";
     
     public String encryptMessage(String message, String publicKeyStr) {
         try {
@@ -31,35 +30,28 @@ public class EncryptionService {
         }
     }
 
-    public String decryptMessage(String encryptedMessage, String privateKeyStr) {
+    public String decryptHash(String encryptedDataB64, String publicKeyPEM) {
         try {
-            byte[] privateKeyBytes = Base64.getDecoder().decode(privateKeyStr);
-            PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateKeyBytes);
-            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            PrivateKey privateKey = keyFactory.generatePrivate(keySpec);
-            
-            Cipher cipher = Cipher.getInstance("RSA");
-            cipher.init(Cipher.DECRYPT_MODE, privateKey);
-            
-            byte[] encryptedBytes = Base64.getDecoder().decode(encryptedMessage);
-            byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
-            return new String(decryptedBytes);
-        } catch (Exception e) {
-            throw new RuntimeException("Ошибка при расшифровке сообщения", e);
-        }
-    }
+            // Очистка PEM заголовков
+            String publicKeyClean = publicKeyPEM
+                    .replace("-----BEGIN PUBLIC KEY-----", "")
+                    .replace("-----END PUBLIC KEY-----", "")
+                    .replaceAll("\\s+", "");
 
-    public String decryptHash(String encryptedHash) {
-        try {
-            SecretKeySpec secretKey = new SecretKeySpec(ENCRYPTION_KEY.getBytes(), "AES");
-            Cipher cipher = Cipher.getInstance("AES");
-            cipher.init(Cipher.DECRYPT_MODE, secretKey);
-            
-            byte[] encryptedBytes = Base64.getDecoder().decode(encryptedHash);
-            byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
+            // Декодирование из Base64
+            byte[] publicKeyBytes = Base64.getDecoder().decode(publicKeyClean);
+            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicKeyBytes);
+
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            PublicKey publicKey = keyFactory.generatePublic(keySpec);
+
+            Cipher cipher = Cipher.getInstance(CIPHER_INSTANCE);
+            cipher.init(Cipher.DECRYPT_MODE, publicKey);
+
+            byte[] decryptedBytes = cipher.doFinal(Base64.getDecoder().decode(encryptedDataB64));
             return new String(decryptedBytes);
         } catch (Exception e) {
-            throw new RuntimeException("Ошибка при расшифровке хеша", e);
+            throw new RuntimeException("Ошибка расшифровки открытым ключом", e);
         }
     }
 } 

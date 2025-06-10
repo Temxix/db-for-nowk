@@ -94,8 +94,8 @@ public class MessageService {
                     decryptedHash = encryptionService.decryptHash(message.getText(), sender.getPublicKey());
                 } else {
                     // Если сообщение от нас, расшифровываем хеш публичным ключом получателя
-                    User recipient = userRepository.findByName(chat.getRecipient());
-                    decryptedHash = encryptionService.decryptHash(message.getText(), recipient.getPublicKey());
+                    User messageRecipient = userRepository.findByName(chat.getRecipient());
+                    decryptedHash = encryptionService.decryptHash(message.getText(), messageRecipient.getPublicKey());
                 }
                 
                 messages.add(new GetMessagesResponseDTO.Message(
