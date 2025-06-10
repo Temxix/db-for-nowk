@@ -19,7 +19,7 @@ public class MessageController {
     }
     
     @PostMapping
-    public ResponseEntity<PostMessageResponseDTO> sendMessage(@RequestBody PostMessageRequestDTO message) {
+    public ResponseEntity<?> postMessage(@RequestBody PostMessageRequestDTO message) {
         // Проверяем валидность данных
         if (message.getText() == null || message.getText().trim().isEmpty()) {
             return ResponseEntity.badRequest().body(new PostMessageResponseDTO("Текст сообщения не может быть пустым", null));
@@ -29,6 +29,9 @@ public class MessageController {
         }
         if (message.getRecipient() == null || message.getRecipient().trim().isEmpty()) {
             return ResponseEntity.badRequest().body(new PostMessageResponseDTO("Имя получателя не может быть пустым", null));
+        }
+        if (message.getHash() == null || message.getHash().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(new PostMessageResponseDTO("Хеш сообщения должен быть указан", null));
         }
         
         try {
@@ -64,5 +67,17 @@ public class MessageController {
         return ResponseEntity
             .status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body("Произошла ошибка: " + e.getMessage());
+    }
+
+    @DeleteMapping("/all")
+    public ResponseEntity<String> deleteAllMessages() {
+        try {
+            messageService.deleteAllMessages();
+            return ResponseEntity.ok("Все сообщения успешно удалены");
+        } catch (Exception e) {
+            return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Ошибка при удалении сообщений: " + e.getMessage());
+        }
     }
 }

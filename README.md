@@ -102,128 +102,55 @@ Content-Type: application/json
 {
     "text": "текст_сообщения",
     "username": "отправитель",
-    "recipient": "получатель"
+    "recipient": "получатель",
+    "hash": "хеш_сообщения"
 }
 ```
-При первой отправке сообщения автоматически создается чат между пользователями.
+При первой отправке сообщения автоматически создается чат между пользователями. Поле `hash` обязательно и должно содержать хеш текста сообщения, вычисленный на стороне клиента.
 
 #### Получение сообщений
 ```
 GET /api/messages?username=имя_пользователя&recipient=имя_получателя
 ```
-
-## Структура данных
-
-### Пользователь (User)
+Возвращает список сообщений в формате:
 ```json
+[
 {
-    "id": "string",
-    "name": "string",
-    "publicKey": "string",
-    "chats": [
-        {
-            "id": "string",
-            "recipient": "string",
-            "messageIds": ["string"],
-            "hasNewMessages": boolean,
-            "lastActivity": "datetime"
-        }
-    ]
+        "text": "текст_сообщения",
+        "timestamp": "2024-03-21T10:30:00",
+        "sentByMe": true,
+        "hash": "хеш_сообщения"
+}
+]
+```
+
+#### Удаление всех сообщений
+```
+DELETE /api/messages?username=имя_пользователя&recipient=имя_получателя
+```
+Удаляет все сообщения между двумя пользователями.
+
+### Примеры использования
+
+#### Пример отправки сообщения
+```
+POST /api/messages
+Content-Type: application/json
+
+{
+    "text": "текст_сообщения",
+    "username": "отправитель",
+    "recipient": "получатель",
+    "hash": "хеш_сообщения"
 }
 ```
 
-### Сообщение (Message)
-```json
-{
-    "id": "string",
-    "text": "string",
-    "sender": "string",
-    "recipient": "string",
-    "timestamp": "datetime"
-}
+#### Пример получения сообщений
+```
+GET /api/messages?username=имя_пользователя&recipient=имя_получателя
 ```
 
-## Особенности работы
-
-### Чаты
-- Чат создается автоматически при отправке первого сообщения
-- Время последней активности (lastActivity) обновляется только при получении новых сообщений
-- При получении сообщений чат помечается как прочитанный (hasNewMessages = false)
-
-### Сообщения
-- Каждое сообщение сохраняется дважды:
-  - Одно для отправителя (sentByMe = true)
-  - Одно для получателя (sentByMe = false)
-- Сообщения хранятся в зашифрованном виде
-
-## Безопасность
-
-- Все сообщения шифруются с использованием RSA-шифрования
-- Каждый пользователь должен предоставить свой публичный RSA-ключ при регистрации
-- Сообщения хранятся в зашифрованном виде в MongoDB
-- Поддержка CORS для безопасного доступа из браузера
-
-## Примеры использования
-
-### Регистрация пользователя
-```bash
-curl -X POST http://localhost:8080/api/users/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "alice",
-    "publicKey": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA..."
-  }'
+#### Пример удаления всех сообщений
 ```
-
-### Отправка сообщения
-```bash
-curl -X POST http://localhost:8080/api/messages \
-  -H "Content-Type: application/json" \
-  -d '{
-    "text": "Привет!",
-    "username": "alice",
-    "recipient": "bob"
-  }'
+DELETE /api/messages?username=имя_пользователя&recipient=имя_получателя
 ```
-
-### Получение сообщений
-```bash
-curl "http://localhost:8080/api/messages?username=alice&recipient=bob"
-```
-
-## Логирование
-
-Сервер использует многоуровневое логирование:
-- INFO: основная информация о работе сервера
-- DEBUG: детальная информация для отладки
-- WARN: предупреждения
-- ERROR: ошибки
-
-## Разработка
-
-### Структура проекта
-```
-src/
-├── main/
-│   ├── java/
-│   │   └── com/
-│   │       └── example/
-│   │           └── messageserver/
-│   │               ├── controller/
-│   │               ├── service/
-│   │               ├── repository/
-│   │               ├── model/
-│   │               └── dto/
-│   └── resources/
-│       └── application.properties
-└── test/
-```
-
-### Тестирование
-```bash
-mvn test
-```
-
-## Лицензия
-
-MIT License

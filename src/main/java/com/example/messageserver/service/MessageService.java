@@ -1,15 +1,14 @@
 package com.example.messageserver.service;
 
+import com.example.messageserver.model.Message;
 import com.example.messageserver.model.User;
-import com.example.messageserver.repository.UserRepository;
 import com.example.messageserver.repository.MessageRepository;
+import com.example.messageserver.repository.UserRepository;
 import com.example.messageserver.dto.PostMessageRequestDTO;
 import com.example.messageserver.dto.GetMessagesResponseDTO;
-import org.springframework.stereotype.Service;
-import com.example.messageserver.model.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,18 +16,24 @@ import java.util.UUID;
 
 @Service
 public class MessageService {
-    
     private static final Logger log = LoggerFactory.getLogger(MessageService.class);
-    private final UserRepository userRepository;
-    private final MessageRepository messageRepository;
     
-    public MessageService(UserRepository userRepository, MessageRepository messageRepository) {
-        this.userRepository = userRepository;
+    private final MessageRepository messageRepository;
+    private final UserRepository userRepository;
+    
+    public MessageService(MessageRepository messageRepository, UserRepository userRepository) {
         this.messageRepository = messageRepository;
+        this.userRepository = userRepository;
     }
     
     public String addMessage(PostMessageRequestDTO messageDTO) {
         log.info("Получен запрос на отправку сообщения от {} к {}", messageDTO.getUsername(), messageDTO.getRecipient());
+        
+        // Проверяем обязательные поля
+        if (messageDTO.getHash() == null || messageDTO.getHash().trim().isEmpty()) {
+            log.error("Хеш сообщения не указан");
+            throw new RuntimeException("Хеш сообщения должен быть указан");
+        }
         
         // Находим отправителя и получателя
         User sender = userRepository.findByName(messageDTO.getUsername());
@@ -42,11 +47,11 @@ public class MessageService {
         String chatId = UUID.randomUUID().toString();
         
         // Создаем сообщение для получателя
-        Message recipientMessage = new Message(messageDTO.getText(), false, chatId);
+        Message recipientMessage = new Message(messageDTO.getText(), false, chatId, messageDTO.getHash());
         messageRepository.save(recipientMessage);
         
         // Создаем сообщение для отправителя
-        Message senderMessage = new Message(messageDTO.getText(), true, chatId);
+        Message senderMessage = new Message(messageDTO.getText(), true, chatId, messageDTO.getHash());
         messageRepository.save(senderMessage);
         
         // Создаем или находим чат для получателя
@@ -86,7 +91,8 @@ public class MessageService {
                 messages.add(new GetMessagesResponseDTO.Message(
                     message.getText(),
                     message.getTimestamp(),
-                    message.isSentByMe()
+                    message.isSentByMe(),
+                    message.getHash()
                 ));
             }
         }
@@ -110,5 +116,11 @@ public class MessageService {
                 user.getChats().add(newChat);
                 return newChat;
             });
+    }
+
+    public void deleteAllMessages() {
+        log.info("Удаление всех сообщений");
+        messageRepository.deleteAll();
+        log.info("Все сообщения успешно удалены");
     }
 } 

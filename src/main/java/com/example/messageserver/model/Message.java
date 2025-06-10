@@ -14,11 +14,13 @@ public class Message {
     private String text;
     private boolean sentByMe;
     private LocalDateTime timestamp;
+    private String hash;
 
-    public Message(String text, boolean sentByMe, String chatId) {
+    public Message(String text, boolean sentByMe, String chatId, String hash) {
         this.text = text;
         this.sentByMe = sentByMe;
         this.chatId = chatId;
         this.timestamp = LocalDateTime.now();
+        this.hash = hash;
     }
 } 
