@@ -86,12 +86,16 @@ public class MessageService {
             Message message = messageRepository.findById(messageId).orElse(null);
             if (message != null) {
                 String messageText = message.getText();
-                // Если сообщение не от нас, расшифровываем его
+                String decryptedHash = null;
+                
+                // Если сообщение не от нас, расшифровываем хеш публичным ключом
                 if (!message.isSentByMe()) {
-                    messageText = encryptionService.decryptMessage(message.getText(), user.getPrivateKey());
+                    decryptedHash = encryptionService.decryptMessage(message.getText(), user.getPublicKey());
                 }
+                
                 messages.add(new GetMessagesResponseDTO.Message(
                     messageText,
+                    decryptedHash,
                     message.getTimestamp(),
                     message.isSentByMe()
                 ));

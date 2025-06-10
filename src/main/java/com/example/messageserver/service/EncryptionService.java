@@ -12,6 +12,8 @@ import java.util.Base64;
 @Service
 public class EncryptionService {
     
+    private static final String ENCRYPTION_KEY = "your-secret-key-here"; // TODO: Вынести в конфигурацию
+    
     public String encryptMessage(String message, String publicKeyStr) {
         try {
             byte[] publicKeyBytes = Base64.getDecoder().decode(publicKeyStr);
@@ -44,6 +46,20 @@ public class EncryptionService {
             return new String(decryptedBytes);
         } catch (Exception e) {
             throw new RuntimeException("Ошибка при расшифровке сообщения", e);
+        }
+    }
+
+    public String decryptHash(String encryptedHash) {
+        try {
+            SecretKeySpec secretKey = new SecretKeySpec(ENCRYPTION_KEY.getBytes(), "AES");
+            Cipher cipher = Cipher.getInstance("AES");
+            cipher.init(Cipher.DECRYPT_MODE, secretKey);
+            
+            byte[] encryptedBytes = Base64.getDecoder().decode(encryptedHash);
+            byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
+            return new String(decryptedBytes);
+        } catch (Exception e) {
+            throw new RuntimeException("Ошибка при расшифровке хеша", e);
         }
     }
 } 

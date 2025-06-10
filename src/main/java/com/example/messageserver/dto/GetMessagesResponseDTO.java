@@ -1,23 +1,47 @@
 package com.example.messageserver.dto;
 
-import lombok.Data;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
-@Data
-public class GetMessagesResponseDTO extends ArrayList<GetMessagesResponseDTO.Message> {
+public class GetMessagesResponseDTO {
+    private List<Message> messages = new ArrayList<>();
     
-    @Data
+    public void add(Message message) {
+        messages.add(message);
+    }
+    
+    public List<Message> getMessages() {
+        return messages;
+    }
+    
     public static class Message {
         private String text;
+        private String decryptedHash;
         private LocalDateTime timestamp;
         private boolean sentByMe;
         
-        public Message(String text, LocalDateTime timestamp, boolean sentByMe) {
+        public Message(String text, String decryptedHash, LocalDateTime timestamp, boolean sentByMe) {
             this.text = text;
+            this.decryptedHash = decryptedHash;
             this.timestamp = timestamp;
             this.sentByMe = sentByMe;
+        }
+        
+        public String getText() {
+            return text;
+        }
+        
+        public String getDecryptedHash() {
+            return decryptedHash;
+        }
+        
+        public LocalDateTime getTimestamp() {
+            return timestamp;
+        }
+        
+        public boolean isSentByMe() {
+            return sentByMe;
         }
     }
 } 
