@@ -89,6 +89,15 @@ public class UserService {
     public void deleteAllUsers() {
         userRepository.deleteAll();
     }
+
+    public void deleteUser(String username) {
+        User user = userRepository.findByName(username);
+        if (user == null) {
+            throw new RuntimeException("Пользователь не найден");
+        }
+        userRepository.delete(user);
+        log.info("Пользователь {} успешно удален", username);
+    }
     
     public String getUserPublicKey(String username) {
         User user = userRepository.findByName(username);

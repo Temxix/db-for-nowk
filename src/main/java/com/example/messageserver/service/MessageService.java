@@ -4,6 +4,7 @@ import com.example.messageserver.model.Message;
 import com.example.messageserver.model.User;
 import com.example.messageserver.repository.MessageRepository;
 import com.example.messageserver.repository.UserRepository;
+import com.example.messageserver.dto.GetMessageIdsResponseDTO;
 import com.example.messageserver.dto.PostMessageRequestDTO;
 import com.example.messageserver.dto.GetMessagesResponseDTO;
 import org.slf4j.Logger;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -103,6 +105,65 @@ public class MessageService {
         
         return messages;
     }
+
+    public GetMessageIdsResponseDTO getMessageIds(String username, String recipient) {
+        User user = userRepository.findByName(username);
+        if (user == null) {
+            throw new RuntimeException("Пользователь не найден");
+        }
+
+        User.Chat chat = findOrCreateChat(user, recipient);
+        return new GetMessageIdsResponseDTO(new ArrayList<>(chat.getMessageIds()));
+    }
+
+    public void deleteMessage(String username, String messageId) {
+        User user = userRepository.findByName(username);
+        if (user == null) {
+            throw new RuntimeException("Пользователь не найден");
+        }
+
+        // Search in all chats for the message ID
+        boolean found = false;
+        for (User.Chat chat : user.getChats()) {
+            if (chat.getMessageIds().remove(messageId)) {
+                found = true;
+                break;
+            }
+        }
+
+        if (found) {
+            messageRepository.deleteById(messageId);
+            userRepository.save(user);
+            log.info("Сообщение {} удалено для пользователя {}", messageId, username);
+        } else {
+            log.warn("Сообщение {} не найдено у пользователя {}", messageId, username);
+            throw new RuntimeException("Сообщение не найдено");
+        }
+    }
+
+    public void deleteChat(String username, String recipient) {
+        User user = userRepository.findByName(username);
+        if (user == null) {
+            throw new RuntimeException("Пользователь не найден");
+        }
+
+        Optional<User.Chat> chatOpt = user.getChats().stream()
+                .filter(c -> c.getRecipient().equals(recipient))
+                .findFirst();
+
+        if (chatOpt.isPresent()) {
+            User.Chat chat = chatOpt.get();
+            // Delete all messages from repository
+            messageRepository.deleteAllById(chat.getMessageIds());
+            // Remove chat from user
+            user.getChats().remove(chat);
+            userRepository.save(user);
+            log.info("Чат с {} удален для пользователя {}", recipient, username);
+        } else {
+            log.warn("Чат с {} не найден у пользователя {}", recipient, username);
+            throw new RuntimeException("Чат не найден");
+        }
+    }
     
     private User.Chat findOrCreateChat(User user, String recipientName) {
         return user.getChats().stream()
@@ -123,4 +184,5 @@ public class MessageService {
         messageRepository.deleteAll();
         log.info("Все сообщения успешно удалены");
     }
+}
 } 

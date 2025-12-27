@@ -4,6 +4,7 @@ import com.example.messageserver.service.MessageService;
 import com.example.messageserver.dto.PostMessageResponseDTO;
 import com.example.messageserver.dto.PostMessageRequestDTO;
 import com.example.messageserver.dto.GetMessagesResponseDTO;
+import com.example.messageserver.dto.GetMessageIdsResponseDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
@@ -59,6 +60,41 @@ public class MessageController {
             return ResponseEntity.ok(messages);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/ids")
+    public ResponseEntity<?> getMessageIds(
+            @RequestParam String username,
+            @RequestParam String recipient) {
+        try {
+            return ResponseEntity.ok(messageService.getMessageIds(username, recipient));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(404).body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{username}/{messageId}")
+    public ResponseEntity<?> deleteMessage(
+            @PathVariable String username,
+            @PathVariable String messageId) {
+        try {
+            messageService.deleteMessage(username, messageId);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(404).body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/chat")
+    public ResponseEntity<?> deleteChat(
+            @RequestParam String username,
+            @RequestParam String recipient) {
+        try {
+            messageService.deleteChat(username, recipient);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(404).body(e.getMessage());
         }
     }
     
